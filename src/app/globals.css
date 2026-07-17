@@ -1,8 +1,12 @@
 @import "tailwindcss";
+@import "mapbox-gl/dist/mapbox-gl.css";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a12;
+  --foreground: #ededed;
+  --neon-cyan: #22d3ee;
+  --neon-violet: #a78bfa;
+  --neon-fuchsia: #e879f9;
 }
 
 @theme inline {
@@ -12,15 +16,294 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.mapboxgl-ctrl-logo,
+.mapboxgl-ctrl-attrib {
+  opacity: 0.4;
+}
+
+/* ネオンマップ — オーバーレイ（スキン別） */
+.neon-map .mapboxgl-canvas {
+  transition: filter 0.4s ease;
+}
+
+.neon-map-vignette {
+  transition: background 0.4s ease, box-shadow 0.4s ease;
+}
+
+.neon-map-glow {
+  transition: background 0.4s ease;
+  mix-blend-mode: screen;
+}
+
+/* バイオレット（デフォルト） */
+.map-skin-violet .neon-map-vignette {
+  background: radial-gradient(
+    ellipse 85% 75% at 50% 45%,
+    transparent 35%,
+    rgba(6, 6, 15, 0.65) 100%
+  );
+  box-shadow: inset 0 0 120px rgba(88, 28, 217, 0.18);
+}
+.map-skin-violet .neon-map-glow {
+  background:
+    radial-gradient(ellipse 90% 45% at 50% 100%, rgba(139, 92, 246, 0.14), transparent),
+    radial-gradient(ellipse 50% 35% at 15% 15%, rgba(34, 211, 238, 0.1), transparent),
+    radial-gradient(ellipse 45% 30% at 85% 20%, rgba(232, 121, 249, 0.08), transparent);
+}
+
+/* サイバー */
+.map-skin-cyber .neon-map-vignette {
+  background: radial-gradient(
+    ellipse 85% 75% at 50% 45%,
+    transparent 35%,
+    rgba(2, 12, 16, 0.7) 100%
+  );
+  box-shadow: inset 0 0 100px rgba(16, 185, 129, 0.15);
+}
+.map-skin-cyber .neon-map-glow {
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 100%, rgba(0, 255, 204, 0.1), transparent),
+    radial-gradient(ellipse 40% 30% at 20% 10%, rgba(52, 211, 153, 0.12), transparent);
+}
+
+/* サクラ */
+.map-skin-sakura .neon-map-vignette {
+  background: radial-gradient(
+    ellipse 85% 75% at 50% 45%,
+    transparent 50%,
+    rgba(251, 207, 232, 0.15) 100%
+  );
+  box-shadow: inset 0 0 80px rgba(244, 114, 182, 0.08);
+}
+.map-skin-sakura .neon-map-glow {
+  background:
+    radial-gradient(ellipse 90% 45% at 50% 100%, rgba(251, 207, 232, 0.2), transparent),
+    radial-gradient(ellipse 50% 35% at 80% 15%, rgba(244, 114, 182, 0.08), transparent);
+}
+
+/* ミッドナイト */
+.map-skin-midnight .neon-map-vignette {
+  background: radial-gradient(
+    ellipse 85% 75% at 50% 45%,
+    transparent 40%,
+    rgba(4, 8, 16, 0.75) 100%
+  );
+  box-shadow: inset 0 0 100px rgba(30, 58, 138, 0.12);
+}
+.map-skin-midnight .neon-map-glow {
+  background:
+    radial-gradient(ellipse 85% 40% at 50% 100%, rgba(59, 130, 246, 0.1), transparent),
+    radial-gradient(ellipse 45% 30% at 10% 20%, rgba(96, 165, 250, 0.06), transparent);
+}
+
+/* ゴールド */
+.map-skin-gold .neon-map-vignette {
+  background: radial-gradient(
+    ellipse 85% 75% at 50% 45%,
+    transparent 35%,
+    rgba(12, 8, 4, 0.7) 100%
+  );
+  box-shadow: inset 0 0 120px rgba(180, 83, 9, 0.18);
+}
+.map-skin-gold .neon-map-glow {
+  background:
+    radial-gradient(ellipse 90% 45% at 50% 100%, rgba(251, 191, 36, 0.12), transparent),
+    radial-gradient(ellipse 50% 35% at 85% 20%, rgba(245, 158, 11, 0.1), transparent);
+}
+
+/* Google風 — 明るい自然色、ネオン演出は控えめ */
+.map-skin-google .neon-map-vignette {
+  background: radial-gradient(
+    ellipse 90% 80% at 50% 45%,
+    transparent 55%,
+    rgba(230, 240, 228, 0.35) 100%
+  );
+  box-shadow: inset 0 0 60px rgba(170, 218, 255, 0.08);
+}
+.map-skin-google .neon-map-glow {
+  background:
+    radial-gradient(ellipse 85% 40% at 50% 100%, rgba(170, 218, 255, 0.1), transparent),
+    radial-gradient(ellipse 45% 30% at 20% 15%, rgba(200, 230, 201, 0.08), transparent);
+}
+
+.mapboxgl-ctrl-group {
+  background: rgba(13, 13, 24, 0.85) !important;
+  border: 1px solid rgba(139, 92, 246, 0.35) !important;
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.25) !important;
+}
+
+.mapboxgl-ctrl-group button {
+  filter: drop-shadow(0 0 4px rgba(167, 139, 250, 0.5));
+}
+
+/* Amplify Authenticator — ネオンダーク（AuthModal）
+   Amplify は [data-amplify-container] を 30rem 固定にするため、
+   親より狭いと中央配置で左右がクリップされる。常に親幅へ合わせる。 */
+.xy-auth [data-amplify-authenticator] {
+  --amplify-components-authenticator-container-width-max: 100%;
+  --amplify-components-authenticator-form-padding: 1rem 0 0.5rem;
+  --amplify-colors-background-primary: transparent;
+  --amplify-colors-background-secondary: #12121f;
+  --amplify-colors-background-tertiary: #1a1a2e;
+  --amplify-colors-border-primary: rgba(139, 92, 246, 0.35);
+  --amplify-colors-border-secondary: rgba(139, 92, 246, 0.2);
+  --amplify-colors-border-focus: #22d3ee;
+  --amplify-colors-brand-primary-10: #1e1b4b;
+  --amplify-colors-brand-primary-20: #2e1065;
+  --amplify-colors-brand-primary-40: #5b21b6;
+  --amplify-colors-brand-primary-60: #7c3aed;
+  --amplify-colors-brand-primary-80: #8b5cf6;
+  --amplify-colors-brand-primary-90: #a78bfa;
+  --amplify-colors-brand-primary-100: #c4b5fd;
+  --amplify-colors-font-primary: #e5e7eb;
+  --amplify-colors-font-secondary: #9ca3af;
+  --amplify-colors-font-tertiary: #6b7280;
+  --amplify-colors-font-interactive: #22d3ee;
+  --amplify-colors-font-hover: #67e8f9;
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.xy-auth [data-amplify-container] {
+  width: 100% !important;
+  max-width: 100% !important;
+  place-self: stretch !important;
+  margin: 0 !important;
+}
+
+@media (min-width: 30rem) {
+  .xy-auth [data-amplify-authenticator] [data-amplify-container] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+.xy-auth [data-amplify-router],
+.xy-auth .amplify-authenticator__router {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.xy-auth [data-amplify-form],
+.xy-auth form {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 1rem 0 0.5rem !important;
+}
+
+.xy-auth [data-amplify-router-content] {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.xy-auth .amplify-flex {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.xy-auth .amplify-field,
+.xy-auth .amplify-field-group,
+.xy-auth .amplify-passwordfield {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.xy-auth [data-amplify-authenticator] [data-amplify*="tabs"] button[data-state="active"],
+.xy-auth .amplify-tabs__item--active {
+  color: #22d3ee !important;
+  border-color: #22d3ee !important;
+}
+
+.xy-auth .amplify-button--primary {
+  width: 100% !important;
+  background: linear-gradient(90deg, #7c3aed, #a78bfa, #22d3ee) !important;
+  background-size: 200% 100% !important;
+  border: none !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em;
+  box-shadow: 0 0 24px rgba(139, 92, 246, 0.35) !important;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.xy-auth .amplify-button--primary:hover {
+  opacity: 0.92;
+  box-shadow: 0 0 32px rgba(34, 211, 238, 0.35) !important;
+}
+
+.xy-auth .amplify-button--link {
+  width: auto !important;
+  justify-content: center;
+  white-space: normal !important;
+}
+
+.xy-auth [data-amplify-footer],
+.xy-auth .amplify-authenticator__footer {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  width: 100% !important;
+  padding: 0.75rem 0 0.25rem !important;
+  margin: 0 !important;
+  text-align: center;
+}
+
+.xy-auth .amplify-input,
+.xy-auth .amplify-field-group__control {
+  width: 100% !important;
+  max-width: 100% !important;
+  background-color: #12121f !important;
+  border-color: rgba(139, 92, 246, 0.35) !important;
+  color: #e5e7eb !important;
+}
+
+.xy-auth .amplify-input:focus,
+.xy-auth .amplify-field-group__control:focus {
+  border-color: #22d3ee !important;
+  box-shadow: 0 0 0 1px #22d3ee !important;
+}
+
+.xy-auth .amplify-label {
+  color: #9ca3af !important;
+  font-size: 0.8125rem !important;
+}
+
+.xy-auth .amplify-tabs {
+  width: 100% !important;
+  border-color: rgba(139, 92, 246, 0.2) !important;
+  margin: 0 !important;
+}
+
+.xy-auth .amplify-tabs__item {
+  flex: 1 1 0 !important;
+  color: #9ca3af !important;
+}
+
+.xy-auth .amplify-tabs__item:hover {
+  color: #e5e7eb !important;
+}
+
+.xy-auth .amplify-text--error,
+.xy-auth .amplify-alert--error {
+  color: #fca5a5 !important;
+}
+
+.xy-auth .amplify-passwordfield button {
+  color: #9ca3af !important;
 }

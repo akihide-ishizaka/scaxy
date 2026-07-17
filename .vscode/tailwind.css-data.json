@@ -1,0 +1,25 @@
+{
+  "version": 1.1,
+  "atDirectives": [
+    {
+      "name": "@theme",
+      "description": "Tailwind CSS v4 theme variables (design tokens)."
+    },
+    {
+      "name": "@utility",
+      "description": "Tailwind CSS v4 custom utility definition."
+    },
+    {
+      "name": "@variant",
+      "description": "Tailwind CSS v4 custom variant definition."
+    },
+    {
+      "name": "@plugin",
+      "description": "Tailwind CSS v4 plugin import."
+    },
+    {
+      "name": "@source",
+      "description": "Tailwind CSS v4 content source paths."
+    }
+  ]
+}

@@ -1,0 +1,185 @@
+// xy (ジィ) - Prisma Schema for Supabase (PostgreSQL + PostGIS)
+// 前提: Supabaseプロジェクトで `create extension if not exists postgis;` を
+//       事前にSQL Editorから一度だけ実行しておく必要があります。
+//       (Prisma単体ではPostGISのgeography型を直接扱えないため、
+//        座標カラムは lat/lng の Float で持ち、検索用に生成カラム/トリガーで
+//        geography列を同期する運用にしています。詳細は末尾のSQL補足を参照)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SnsPlatform {
+  INSTAGRAM
+  YOUTUBE
+}
+
+enum PinStatus {
+  ACTIVE       // 通常表示
+  UNDER_REVIEW // 3通報到達、審査中（地図上は非表示）
+  HIDDEN       // 運営判断で非表示（データは保持）
+  DEAD_LINK    // リンク切れバッチで検知、非表示
+}
+
+model User {
+  id            String   @id @default(uuid())
+  authProvider  String   // "apple" | "google"
+  authSubject   String   // Apple/GoogleのユーザーID(sub)
+  displayName   String
+  avatarUrl     String?
+  createdAt     DateTime @default(now())
+  lastLoginAt   DateTime @default(now())
+
+  // 通報権限: アカウント作成から一定期間 or ログイン実績で判定するためのフラグ
+  reportEligibleAt DateTime? // このタイムスタンプ以降、通報権限を付与
+
+  snsAccounts   SnsAccount[]
+  pins          Pin[]
+  reportsMade   PinReport[]      @relation("ReporterUser")
+  clickLogs     ClickLog[]
+
+  followingList Follow[] @relation("Follower")
+  followerList  Follow[] @relation("Followee")
+
+  blockingList  Block[]  @relation("Blocker")
+  blockedByList Block[]  @relation("Blocked")
+
+  @@unique([authProvider, authSubject])
+  @@index([authProvider, authSubject])
+}
+
+// OAuth連携したSNSアカウント本体。トークンはSupabase Vault等での
+// 暗号化保管を推奨(ここではカラムとしてのみ定義)。
+model SnsAccount {
+  id              String      @id @default(uuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  platform        SnsPlatform
+  platformUserId  String      // IG: ig-user-id / YT: channelId
+  platformHandle  String      // 表示用 @username
+
+  accessToken     String
+  refreshToken    String?
+  tokenExpiresAt  DateTime?
+
+  connectedAt     DateTime    @default(now())
+  lastSyncedAt    DateTime?
+
+  pins            Pin[]
+
+  @@unique([platform, platformUserId])
+  @@index([userId, platform])
+}
+
+// 地図上のピン本体。動画データそのものは持たず、URLとメタ情報のみ保持。
+model Pin {
+  id             String      @id @default(uuid())
+
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  snsAccountId   String
+  snsAccount     SnsAccount  @relation(fields: [snsAccountId], references: [id], onDelete: Cascade)
+
+  platform       SnsPlatform
+  sourceUrl      String      // 本人投稿のパーマリンク (/p/, /reel/, /shorts/ のみ許可)
+  platformMediaId String     // IG media id / YT video id (重複投稿チェック用)
+
+  captionSnippet String?     // 表示用キャプション抜粋(自社DBには全文保存しない方針を推奨)
+  thumbnailUrl   String?     // オンデマンド取得のキャッシュ(TTL付き運用推奨)
+
+  latitude       Float
+  longitude      Float
+  // geography(Point,4326) は下記SQL補足のトリガーで自動生成・同期
+
+  status         PinStatus   @default(ACTIVE)
+  reportCount    Int         @default(0)
+  clickCount     Int         @default(0)
+
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  lastLinkCheckAt DateTime?  // フェーズ2: 週次リンク切れチェッカー用
+
+  reports        PinReport[]
+  clickLogs      ClickLog[]
+
+  @@unique([platform, platformMediaId]) // 同一投稿の二重登録を防止
+  @@index([status])
+  @@index([latitude, longitude])
+}
+
+// 3通報・自動非表示の実体
+model PinReport {
+  id           String   @id @default(uuid())
+  pinId        String
+  pin          Pin      @relation(fields: [pinId], references: [id], onDelete: Cascade)
+  reporterId   String
+  reporter     User     @relation("ReporterUser", fields: [reporterId], references: [id], onDelete: Cascade)
+  reason       String?
+  createdAt    DateTime @default(now())
+
+  @@unique([pinId, reporterId]) // 同一ユーザーからの多重通報を防止
+}
+
+// アウトバウンド送客ログ(クリックの都度1レコード、または集計用に軽量化してもよい)
+model ClickLog {
+  id        String      @id @default(uuid())
+  pinId     String
+  pin       Pin         @relation(fields: [pinId], references: [id], onDelete: Cascade)
+  userId    String?     // 未ログインクリックも許容するならnullable
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  platform  SnsPlatform
+  clickedAt DateTime    @default(now())
+
+  @@index([pinId, clickedAt]) // フェーズ2ヒートマップ集計用
+}
+
+model Follow {
+  followerId String
+  follower   User   @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followeeId String
+  followee   User   @relation("Followee", fields: [followeeId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@id([followerId, followeeId])
+}
+
+// ブロックは物理削除せず、表示フィルタのみに使う設計(要件通り)
+model Block {
+  blockerId String
+  blocker   User   @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User   @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([blockerId, blockedId])
+}
+
+/*
+--- 補足SQL (Supabase SQL Editorで実行) ---
+
+-- PostGIS有効化
+create extension if not exists postgis;
+
+-- Pinテーブルにgeography列を追加し、lat/lngから自動同期するトリガー
+alter table "Pin" add column geom geography(Point, 4326);
+
+create or replace function sync_pin_geom() returns trigger as $$
+begin
+  new.geom := ST_SetSRID(ST_MakePoint(new.longitude, new.latitude), 4326)::geography;
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger trg_sync_pin_geom
+before insert or update of latitude, longitude on "Pin"
+for each row execute function sync_pin_geom();
+
+-- 近傍検索用インデックス(地図の可視範囲内のピン取得を高速化)
+create index idx_pin_geom on "Pin" using gist (geom);
+*/
