@@ -5,6 +5,11 @@ applications:
         preBuild:
           commands:
             - npm install --legacy-peer-deps
+            # Hosting にバックエンド未連携のときはデモモード用スタブを作成
+            - |
+              if [ ! -f amplify_outputs.json ]; then
+                echo '{}' > amplify_outputs.json
+              fi
         build:
           commands:
             - npm run build
