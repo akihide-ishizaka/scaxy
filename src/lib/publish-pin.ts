@@ -193,5 +193,7 @@ export async function fetchMapPins(): Promise<Pin[]> {
     throw new Error(errors[0].message ?? "ピン一覧の取得に失敗しました");
   }
 
-  return (data ?? []).map(mapApiPin);
+  return (data ?? [])
+    .filter((pin): pin is NonNullable<typeof pin> => pin != null)
+    .map((pin) => mapApiPin(pin));
 }
